@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Profile</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+    }
+    .profile-container {
+      width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 30px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    .profile-container h1 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      text-align: center;
+      color: #333;
+      font-weight: 600;
+    }
+    .profile-container p {
+      margin: 6px 0; color: #444; font-size: 14px;
+    }
+    .logout-button {
+      background: #ff4d4f; color: #fff;
+      border: none; padding: 10px 14px;
+      border-radius: 4px; cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .logout-button:hover {
+      background: #d9363e;
+    }
+    .back-button {
+      text-decoration: none;
+      color: #409eff; font-weight: 600;
+      margin-top: 16px; display: inline-block;
+    }
+    .back-button:hover {
+      text-decoration: underline;
+    }
+    hr {
+      margin: 24px 0; border: none; border-top: 1px solid #ddd;
+    }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 16px;
+    }
+    table thead {
+      background: #f7f7f7;
+    }
+    table th, table td {
+      text-align: left; padding: 12px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+    table th {
+      color: #555;
+    }
+
+    .action-btn {
+      border: none; padding: 6px 10px;
+      cursor: pointer; border-radius: 4px;
+      margin: 0 4px;
+    }
+    .edit-btn {
+      background-color: #409eff; color: #fff;
+    }
+    .edit-btn:hover {
+      background-color: #2f8be6;
+    }
+    .delete-btn {
+      background-color: #ff4d4f; color: #fff;
+    }
+    .delete-btn:hover {
+      background-color: #d9363e;
+    }
+
+    .save-btn {
+      background-color: #67c23a; color: #fff;
+    }
+    .save-btn:hover {
+      background-color: #5bab2f;
+    }
+    .cancel-btn {
+      background-color: #909399; color: #fff;
+    }
+    .cancel-btn:hover {
+      background-color: #777b7f;
+    }
+
+    .inline-input {
+      width: 90%;
+      padding: 4px 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <h1>Admin Profile</h1>
+    
+    <p><strong>Username:</strong> <span id="username"></span></p>
+    <p><strong>Role:</strong> <span id="role"></span></p>
+    <button id="logoutButton" class="logout-button">Logout</button>
+    <br>
+    <a href="/admin" class="back-button">Back to Admin Dashboard</a>
+    
+    <hr/>
+
+    <h2>All Users</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Password</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in all_users %}
+        <tr data-user-id="{{ user.id }}" data-edit-mode="false">
+          <td class="td-id">{{ user.id }}</td>
+
+          <td class="td-username">
+            <span class="text-value">{{ user.username }}</span>
+          </td>
+
+          <td class="td-role">
+            <span class="text-value">{{ user.role }}</span>
+          </td>
+
+          <td class="td-password">
+            <span class="text-value">••••••</span>
+          </td>
+
+          <td>
+            <button class="action-btn edit-btn">Edit</button>
+            <button class="action-btn delete-btn">Delete</button>
+
+            <button class="action-btn save-btn" style="display: none;">Save</button>
+            <button class="action-btn cancel-btn" style="display: none;">Cancel</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const username = "{{ session['username'] }}";
+      const role = "{{ session['role'] }}";
+
+      document.getElementById('username').textContent = username;
+      document.getElementById('role').textContent = role;
+
+      const logoutButton = document.getElementById('logoutButton');
+      logoutButton.addEventListener('click', () => {
+          fetch('/logout', { method: 'GET' })
+              .then(() => {
+                  alert('You have been logged out.');
+                  window.location.href = '/';
+              })
+              .catch(err => console.error('Logout failed:', err));
+      });
+
+      const rows = document.querySelectorAll('tbody tr[data-user-id]');
+      rows.forEach(row => {
+          const userId    = row.dataset.userId;
+          const editBtn   = row.querySelector('.edit-btn');
+          const deleteBtn = row.querySelector('.delete-btn');
+          const saveBtn   = row.querySelector('.save-btn');
+          const cancelBtn = row.querySelector('.cancel-btn');
+
+          const usernameTd   = row.querySelector('.td-username');
+          const roleTd       = row.querySelector('.td-role');
+          const passwordTd   = row.querySelector('.td-password');
+
+          deleteBtn.addEventListener('click', async () => {
+              if (!confirm("Are you sure you want to delete this user?")) return;
+              try {
+                  const response = await fetch(`/users/${userId}`, {
+                      method: 'DELETE'
+                  });
+                  if (!response.ok) {
+                      const errData = await response.json();
+                      alert(`Delete failed: ${errData.message || ''}`);
+                      return;
+                  }
+                  alert('User deleted successfully!');
+                  row.remove(); 
+              } catch (error) {
+                  alert(`Error deleting user: ${error}`);
+              }
+          });
+
+          editBtn.addEventListener('click', () => {
+              row.dataset.editMode = "true";
+
+              const currentUsername = usernameTd.querySelector('.text-value').textContent;
+              const currentRole     = roleTd.querySelector('.text-value').textContent;
+              const currentPass     = "";
+
+              const usernameInput = document.createElement('input');
+              usernameInput.type = 'text';
+              usernameInput.value = currentUsername;
+              usernameInput.className = 'inline-input';
+
+              const roleInput = document.createElement('input');
+              roleInput.type = 'text';
+              roleInput.value = currentRole;
+              roleInput.className = 'inline-input';
+
+              const passInput = document.createElement('input');
+              passInput.type = 'password';
+              passInput.value = currentPass;
+              passInput.className = 'inline-input';
+
+              usernameTd.innerHTML = '';
+              roleTd.innerHTML = '';
+              passwordTd.innerHTML = '';
+
+              usernameTd.appendChild(usernameInput);
+              roleTd.appendChild(roleInput);
+              passwordTd.appendChild(passInput);
+
+              editBtn.style.display   = 'none';
+              deleteBtn.style.display = 'none';
+              saveBtn.style.display   = 'inline-block';
+              cancelBtn.style.display = 'inline-block';
+          });
+
+          cancelBtn.addEventListener('click', () => {
+              row.dataset.editMode = "false";
+              const oldUsername = row.querySelector('.td-username .inline-input').value;
+              const oldRole     = row.querySelector('.td-role .inline-input').value;
+
+              usernameTd.innerHTML = `<span class="text-value">${oldUsername}</span>`;
+              roleTd.innerHTML = `<span class="text-value">${oldRole}</span>`;
+              passwordTd.innerHTML = `<span class="text-value">••••••</span>`;
+
+              editBtn.style.display   = 'inline-block';
+              deleteBtn.style.display = 'inline-block';
+              saveBtn.style.display   = 'none';
+              cancelBtn.style.display = 'none';
+          });
+
+          saveBtn.addEventListener('click', async () => {
+              const newUsername = row.querySelector('.td-username .inline-input').value;
+              const newRole     = row.querySelector('.td-role .inline-input').value;
+              const newPassword = row.querySelector('.td-password .inline-input').value;
+
+              try {
+                  const response = await fetch(`/users/${userId}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          username: newUsername,
+                          role: newRole,
+                          password: newPassword
+                      })
+                  });
+                  if (!response.ok) {
+                      const errData = await response.json();
+                      alert(`Update failed: ${errData.message || ''}`);
+                      return;
+                  }
+                  alert('User updated successfully!');
+
+                  usernameTd.innerHTML = `<span class="text-value">${newUsername}</span>`;
+                  roleTd.innerHTML = `<span class="text-value">${newRole}</span>`;
+                  passwordTd.innerHTML = `<span class="text-value">••••••</span>`;
+
+                  row.dataset.editMode = "false";
+                  editBtn.style.display   = 'inline-block';
+                  deleteBtn.style.display = 'inline-block';
+                  saveBtn.style.display   = 'none';
+                  cancelBtn.style.display = 'none';
+              } catch (error) {
+                  alert(`Error updating user: ${error}`);
+              }
+          });
+      });
+  });
+  </script>
+</body>
+</html>

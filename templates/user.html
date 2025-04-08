@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Web GIS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+    <script>
+        const role = '{{ session["role"] }}';
+        const username = '{{ session["username"] }}';
+        if (!role || role !== 'user') {
+            alert('You must be logged in as an admin to access this page.');
+            window.location.href = '/';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleBanner = document.getElementById('roleBanner');
+            roleBanner.textContent = `Logged in as ${username} (User)`;
+
+            const logoutButton = document.getElementById('logoutButton');
+            logoutButton.addEventListener('click', () => {
+                fetch('/logout', { method: 'GET' })
+                    .then(() => {
+                        alert('You have been logged out.');
+                        window.location.href = '/';
+                    })
+                    .catch(err => console.error('Logout failed:', err));
+            });
+
+        });
+    </script>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="roleBanner" class="role-banner"></div>
+
+    <button id="logoutButton" class="logout-button">Logout</button>
+
+    <div class="ui-container">
+
+        <form id="addForm">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="number" id="lat" placeholder="Latitude" step="any" required>
+            <input type="number" id="lng" placeholder="Longitude" step="any" required>
+            <input type="number" id="height" placeholder="Height (optional)" step="any">
+            <button type="submit">Add Point</button>
+        </form>
+        <div class="ui-buttons">
+            <button id="createPolygon">Create Polygon</button>
+            <button id="editMarker" class="secondary">Edit Push</button>
+            <button id="exportToJson" class="secondary">Export All Points</button>
+            <button id="clearAllMarkers" class="warning">Clear All Markers</button>
+            <button id="exportVisibleMarkers" class="secondary">Export Visible Points</button>
+        </div>
+        <div class="secondary" id="markerInfoContainer">
+            <h3>Marker Information</h3>
+            <input type="text" id="searchMarkers" placeholder="Search for a marker..." style="width: 100%; margin-bottom: 10px; padding: 8px;">
+            <div id="markerInfo" class="scrollable-info"></div>
+        </div>
+        <div>
+            <label for="fileInput">Upload CSV:</label>
+            <input type="file" id="fileInput" accept=".csv" />
+            <button id="processFile" class="secondary">Process File</button>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
