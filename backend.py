@@ -8,12 +8,6 @@ app = Flask(__name__, template_folder="templates")
 app.secret_key = 'supersecretkey' 
 app.permanent_session_lifetime = timedelta(minutes=30)
 
-# Veritabanı bağlantısını kapatıyoruz
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:tolga@localhost:5432/webgisFts'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# db = SQLAlchemy(app)  # Veritabanını devre dışı bıraktık
-
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
